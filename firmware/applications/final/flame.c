@@ -23,6 +23,8 @@ static uint8_t flamesOwned = 0;
 static uint8_t rgbData[24];
 static uint8_t rgbDataSize = 0;
 static uint8_t rgbDataOffset = 0;
+static int rgbCycle[3] = {0x00, 0x00, 0xFF};
+static uint8_t rgbDecrease = 2;
 
 static void changeColor() {
     if (rgbDataSize > 2) {
@@ -33,6 +35,25 @@ static void changeColor() {
         } else {
             rgbDataOffset = 0;
         }
+    } else if (rgbDataSize == 1 && rgbData[0] == 0 ) {
+      // Cycle through rgb if there is just one(!) null byte in FLAME.RGB
+      if (rgbCycle[rgbDataOffset] >= 255) {
+        if (rgbDataOffset == 0) {
+          rgbDataOffset = 1;
+          rgbDecrease = 0;
+        } else if (rgbDataOffset == 2) {
+          rgbDataOffset = 0;
+          rgbDecrease = 2;
+        } else {
+          rgbDataOffset = 2;
+          rgbDecrease = 1;
+        }
+      }
+
+      rgbCycle[rgbDataOffset] += 1;
+      rgbCycle[rgbDecrease] -= 1;
+
+      flameSetColor(flamesOwned, rgbCycle[0], rgbCycle[1], rgbCycle[2]);
     } else {
         // generate a hash from the nickname
         uint32_t hash[4];
